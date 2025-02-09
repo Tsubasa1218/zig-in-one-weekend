@@ -12,6 +12,9 @@ const normalized = @import("./VectorUtils.zig").normalized;
 const twos: Vec3 = @splat(2.0);
 const halfs = @as(Vec3, @splat(0.5));
 
+const DefaultRNG = std.Random.DefaultPrng;
+var RNG = DefaultRNG.init(0);
+
 pub const Camera = struct {
     width: usize,
     height: usize,
@@ -50,5 +53,21 @@ pub const Camera = struct {
             .pixel_delta_u = pixel_delta_u,
             .pixel_delta_v = pixel_delta_v,
         };
+    }
+
+    pub fn sample_ray(self: Camera, is: Vec3, js: Vec3) Ray {
+        const offset_i = RNG.random().float(Size) - 0.5;
+        const offset_j = RNG.random().float(Size) - 0.5;
+
+        const offset_vec_i: Vec3 = @splat(offset_i);
+        const offset_vec_j: Vec3 = @splat(offset_j);
+
+        const pixel_center = self.pixel_00_loc +
+            ((is + offset_vec_i) * self.pixel_delta_u) +
+            ((js + offset_vec_j) * self.pixel_delta_v);
+
+        const direction = pixel_center - self.center;
+
+        return Ray{ .origin = self.center, .direction = direction };
     }
 };

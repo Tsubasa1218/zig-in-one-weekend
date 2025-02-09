@@ -27,4 +27,8 @@ pub const Interval = struct {
     pub fn surrounds(self: Interval, x: Size) bool {
         return self.min < x and x < self.max;
     }
+
+    pub fn clamp(self: Interval, x: Size) Size {
+        return math.clamp(x, self.min, self.max);
+    }
 };

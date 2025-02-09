@@ -7,6 +7,10 @@ const Ray = @import("./Ray.zig").Ray;
 const Camera = @import("./Camera.zig").Camera;
 const Sphere = @import("./Sphere.zig").Sphere;
 const Tracer = @import("./Tracer.zig");
+const Interval = @import("./Interval.zig").Interval;
+
+const samples_per_pixel: i32 = 25;
+const sample_avg_dividend: Vec3 = @splat(1.0 / @as(Size, @floatFromInt(samples_per_pixel)));
 
 fn render_world(camera: *Camera, world: [2]Sphere) !void {
     const stdout_file = std.io.getStdOut().writer();
@@ -15,21 +19,24 @@ fn render_world(camera: *Camera, world: [2]Sphere) !void {
 
     try stdout.print("P3\n{} {}\n255\n", .{ camera.width, camera.height });
 
+    const pixel_interval = Interval{ .min = 0, .max = 1.0 };
+
     for (0..camera.height) |j| {
         for (0..camera.width) |i| {
             const is: Vec3 = @splat(@floatFromInt(i));
             const js: Vec3 = @splat(@floatFromInt(j));
 
-            const pixel_center = camera.pixel_00_loc + (is * camera.pixel_delta_u) + (js * camera.pixel_delta_v);
-            const direction = pixel_center - camera.center;
+            var color = Vec3{ 0, 0, 0 };
+            for (0..samples_per_pixel) |_| {
+                var ray = camera.sample_ray(is, js);
+                color += Tracer.trace(&ray, world);
+            }
 
-            var ray = Ray{ .origin = camera.center, .direction = direction };
+            color = color * sample_avg_dividend;
 
-            const color = Tracer.trace(&ray, world);
-
-            const r = @as(i32, @intFromFloat(color[0] * 255));
-            const g = @as(i32, @intFromFloat(color[1] * 255));
-            const b = @as(i32, @intFromFloat(color[2] * 255));
+            const r = @as(i32, @intFromFloat(pixel_interval.clamp(color[0]) * 255));
+            const g = @as(i32, @intFromFloat(pixel_interval.clamp(color[1]) * 255));
+            const b = @as(i32, @intFromFloat(pixel_interval.clamp(color[2]) * 255));
             try stdout.print("{} {} {}\n", .{ r, g, b });
         }
     }
