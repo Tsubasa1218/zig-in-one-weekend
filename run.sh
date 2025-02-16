@@ -1,1 +1,1 @@
-rm output.ppm && zig build run > output.ppm && open output.ppm
+rm output.ppm && time zig build run > output.ppm && open output.ppm

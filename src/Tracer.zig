@@ -7,9 +7,12 @@ const Ray = @import("./Ray.zig").Ray;
 const Interval = @import("./Interval.zig").Interval;
 const HitRecord = @import("./HitRecord.zig").HitRecord;
 const Sphere = @import("./Sphere.zig").Sphere;
-const normalized = @import("./VectorUtils.zig").normalized;
+const vec_utils = @import("./VectorUtils.zig");
+
+const normalized = vec_utils.normalized;
 
 const ones = @as(Vec3, @splat(1));
+const black = @as(Vec3, @splat(0));
 const halfs = @as(Vec3, @splat(0.5));
 
 fn hit_objects(spheres: [2]Sphere, ray: *Ray, interval: Interval) ?HitRecord {
@@ -26,9 +29,15 @@ fn hit_objects(spheres: [2]Sphere, ray: *Ray, interval: Interval) ?HitRecord {
     return final_record;
 }
 
-pub fn trace(ray: *Ray, world: [2]Sphere) Vec3 {
-    if (hit_objects(world, ray, Interval{ .min = 0, .max = std.math.inf(Size) })) |record| {
-        return halfs * (record.normal + ones);
+pub fn trace(ray: *Ray, world: [2]Sphere, depth: i32) Vec3 {
+    if (depth <= 0) {
+        return black;
+    }
+
+    if (hit_objects(world, ray, Interval{ .min = 0, .max = std.math.inf(Size) })) |hit_record| {
+        const bounce_direction = hit_record.normal + vec_utils.random_unit_vec();
+        var ray_bounce = Ray{ .origin = hit_record.point, .direction = bounce_direction };
+        return halfs * trace(&ray_bounce, world, depth - 1);
     }
 
     const unit = normalized(ray.direction);
