@@ -65,3 +65,15 @@ pub fn random_vec_on_hemisphere(normal: Vec3) Vec3 {
 
     return -random;
 }
+
+pub fn vec_near_zero(vec: Vec3) bool {
+    const min_supported_val = 1e-8;
+
+    return @abs(vec[0]) < min_supported_val and @abs(vec[1]) < min_supported_val and @abs(vec[2]) < min_supported_val and @abs(vec[2]) < min_supported_val;
+}
+
+pub fn reflect(vec: Vec3, normal: Vec3) Vec3 {
+    const twob: Vec3 = @splat(2.0 * dot(vec, normal));
+
+    return vec - twob * normal;
+}

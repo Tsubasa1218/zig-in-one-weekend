@@ -2,14 +2,16 @@ const std = @import("std");
 
 const Size = @import("./Types.zig").Size;
 const Vec3 = @import("./Types.zig").Vec3;
+const WorldSize = @import("./Types.zig").WorldSize;
 
 const Ray = @import("./Ray.zig").Ray;
 const Camera = @import("./Camera.zig").Camera;
 const Sphere = @import("./Sphere.zig").Sphere;
 const Tracer = @import("./Tracer.zig");
 const Interval = @import("./Interval.zig").Interval;
+const Material = @import("./Material.zig").Material;
 
-const samples_per_pixel: i32 = 25;
+const samples_per_pixel: i32 = 20;
 const sample_avg_dividend: Vec3 = @splat(1.0 / @as(Size, @floatFromInt(samples_per_pixel)));
 
 const MAX_DEPTH = 10;
@@ -28,7 +30,7 @@ fn vec_linear_to_gamma(l: Vec3) Vec3 {
     };
 }
 
-fn render_world(camera: *Camera, world: [2]Sphere) !void {
+fn render_world(camera: *Camera, world: [WorldSize]Sphere) !void {
     const stdout_file = std.io.getStdOut().writer();
     var bw = std.io.bufferedWriter(stdout_file);
     const stdout = bw.writer();
@@ -62,7 +64,17 @@ fn render_world(camera: *Camera, world: [2]Sphere) !void {
 }
 
 pub fn main() !void {
-    const world: [2]Sphere = .{ .{ .center = .{ 0, 0, -1 }, .radius = 0.5 }, .{ .center = .{ 0, -100.5, -1 }, .radius = 100 } };
+    const m_ground = Material{ .lambertian = .{ .color = Vec3{ 0.8, 0.8, 0.0 } } };
+    const m_center = Material{ .lambertian = .{ .color = Vec3{ 0.1, 0.2, 0.5 } } };
+    const m_left = Material{ .metal = .{ .color = Vec3{ 0.8, 0.8, 0.8 }, .fuzz = 0.3 } };
+    const m_right = Material{ .metal = .{ .color = Vec3{ 0.8, 0.6, 0.2 }, .fuzz = 1.0 } };
+
+    const s_center = Sphere{ .center = .{ 0, 0, -1.2 }, .radius = 0.5, .material = m_center };
+    const s_ground = Sphere{ .center = .{ 0, -100.5, -1 }, .radius = 100, .material = m_ground };
+    const s_left = Sphere{ .center = .{ -1, 0, -1 }, .radius = 0.5, .material = m_left };
+    const s_right = Sphere{ .center = .{ 1, 0, -1 }, .radius = 0.5, .material = m_right };
+
+    const world: [WorldSize]Sphere = .{ s_center, s_ground, s_left, s_right };
     var camera = Camera.init(16.0 / 9.0, 400);
     try render_world(&camera, world);
 }

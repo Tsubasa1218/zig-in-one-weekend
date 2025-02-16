@@ -4,14 +4,16 @@ const Vec3 = @import("./Types.zig").Vec3;
 const Ray = @import("./Ray.zig").Ray;
 const Interval = @import("./Interval.zig").Interval;
 const HitRecord = @import("./HitRecord.zig").HitRecord;
+const Material = @import("./Material.zig").Material;
 
 const vec_utils = @import("./VectorUtils.zig");
 
 pub const Sphere = struct {
     center: Vec3,
     radius: Size,
+    material: Material,
 
-    pub fn hit(self: Sphere, ray: *Ray, interval: Interval) ?HitRecord {
+    pub fn hit(self: Sphere, ray: *const Ray, interval: Interval) ?HitRecord {
         const oc = self.center - ray.origin;
 
         const a = vec_utils.vec_len_squared(ray.direction);
@@ -44,6 +46,7 @@ pub const Sphere = struct {
             .point = hit_point,
             .normal = undefined,
             .front_face = false,
+            .material = &self.material,
         };
 
         record.set_face_normal(ray, outward_normal);
